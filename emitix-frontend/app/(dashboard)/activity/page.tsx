@@ -116,7 +116,7 @@ export default function ActivityLogPage() {
                   <tr
                     key={activity.id}
                     className={`border-b border-border last:border-0 hover:bg-cloud/30 transition-colors ${
-                      activity.result !== "SUCCESS" ? "bg-coral/5" : ""
+                      activity.result !== "EXITOSO" ? "bg-coral/5" : ""
                     }`}
                   >
                     <td className="py-4 px-4">
@@ -153,9 +153,9 @@ export default function ActivityLogPage() {
                     </td>
                     <td className="py-4 px-4">
                       <span className={`text-xs font-semibold ${
-                        activity.result === "SUCCESS" ? "text-emerald" : "text-coral"
+                        activity.result === "EXITOSO" ? "text-emerald" : "text-coral"
                       }`}>
-                        {activity.result === "SUCCESS" ? "OK" : "ERROR"}
+                        {activity.result === "EXITOSO" ? "OK" : activity.result}
                       </span>
                       {activity.errorDetail && (
                         <p className="text-xs text-coral mt-0.5 max-w-xs truncate" title={activity.errorDetail}>

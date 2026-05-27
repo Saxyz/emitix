@@ -14,6 +14,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 
@@ -24,25 +29,40 @@ public class AuditLogService {
 
     private final ActivityLogRepository activityLogRepository;
 
+    @Lazy
+    @Autowired
+    private AuditLogService self;
+
+    private String captureClientIp() {
+        try {
+            var attrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+            HttpServletRequest req = attrs.getRequest();
+            String forwarded = req.getHeader("X-Forwarded-For");
+            return (forwarded != null && !forwarded.isBlank())
+                    ? forwarded.split(",")[0].trim()
+                    : req.getRemoteAddr();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * Registra una acción en el log de auditoría.
      * Usa propagation REQUIRES_NEW para que el log no dependa de la transacción llamante.
      */
-    @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(String username, String action, EntityType entity,
                        String entityId, String entityRef, String description) {
-        record(username, action, entity, entityId, entityRef, description,
-                ActivityResult.EXITOSO, null, null, null);
+        String ip = captureClientIp();
+        self.record(username, action, entity, entityId, entityRef, description,
+                ActivityResult.EXITOSO, null, ip, null);
     }
 
-    @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordFailure(String username, String action, EntityType entity,
                               String entityId, String entityRef, String description,
                               String errorDetail) {
-        record(username, action, entity, entityId, entityRef, description,
-                ActivityResult.FALLIDO, errorDetail, null, null);
+        String ip = captureClientIp();
+        self.record(username, action, entity, entityId, entityRef, description,
+                ActivityResult.FALLIDO, errorDetail, ip, null);
     }
 
     @Async
