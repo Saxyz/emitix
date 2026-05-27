@@ -39,6 +39,9 @@ export const invoicesApi = {
   cancel: (id: string) =>
     api.post<InvoiceResponse>(`/api/invoices/${id}/cancel`),
 
+  delete: (id: string) =>
+    api.delete<void>(`/api/invoices/${id}`),
+
   downloadPdf: (id: string) =>
     api.get<Blob>(`/api/invoices/${id}/pdf`),
 

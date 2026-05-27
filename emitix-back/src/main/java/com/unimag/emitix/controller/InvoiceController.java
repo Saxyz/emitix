@@ -82,13 +82,23 @@ public class InvoiceController {
     }
 
     /**
-     * Cancela una factura ACCEPTED → CANCELLED.
-     * Solo el ADMIN puede cancelar facturas ya aceptadas.
+     * Cancela una factura ACCEPTED o DRAFT -> CANCELLED.
+     * Solo los administradores pueden cancelar facturas ya aceptadas, pero los contadores pueden cancelar borradores.
      */
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','ACCOUNTANT')")
     public ResponseEntity<InvoiceResponse> cancelInvoice(@PathVariable UUID id) {
         return ResponseEntity.ok(invoiceService.cancel(id));
+    }
+
+    /**
+     * Elimina una factura en estado DRAFT.
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','ACCOUNTANT')")
+    public ResponseEntity<Void> deleteInvoice(@PathVariable UUID id) {
+        invoiceService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/pdf")

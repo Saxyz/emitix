@@ -130,8 +130,17 @@ public class InvoiceService {
     public InvoiceResponse cancel(UUID id) {
         Invoice invoice = getInvoiceOrThrow(id);
 
-        if (invoice.getStatus() != InvoiceStatus.ACCEPTED) {
+        if (invoice.getStatus() != InvoiceStatus.ACCEPTED && invoice.getStatus() != InvoiceStatus.DRAFT) {
             throw new InvalidInvoiceStateException(invoice.getStatus().name(), "cancelar");
+        }
+
+        if (invoice.getStatus() == InvoiceStatus.ACCEPTED) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            if (!isAdmin) {
+                throw new BusinessException("Solo los administradores pueden cancelar facturas ya aceptadas");
+            }
         }
 
         invoice.setStatus(InvoiceStatus.CANCELLED);
@@ -141,6 +150,19 @@ public class InvoiceService {
                 saved.getId().toString(), saved.getPrefix() + "-" + saved.getNumber(),
                 "Factura cancelada");
         return invoiceMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        Invoice invoice = getInvoiceOrThrow(id);
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new InvalidInvoiceStateException(invoice.getStatus().name(), "eliminar");
+        }
+        invoiceRepository.delete(invoice);
+        log.info("Invoice {} deleted", id);
+        auditLogService.record(currentUsername(), "BORRAR", EntityType.FACTURA,
+                invoice.getId().toString(), invoice.getPrefix() + "-" + invoice.getNumber(),
+                "Factura borrada");
     }
 
     @Transactional(readOnly = true)

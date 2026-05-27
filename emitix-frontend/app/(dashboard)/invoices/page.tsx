@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Search, Plus, MoreVertical, ChevronLeft, ChevronRight,
-  Clock, Pencil, XCircle,
+  Clock, Pencil, XCircle, Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +82,17 @@ export default function InvoicesPage() {
       fetchInvoices(page)
     } catch {
       toast({ title: "No se pudo cancelar la factura", variant: "destructive" })
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Seguro que deseas borrar esta factura borrador? Esta acción no se puede deshacer.")) return
+    try {
+      await invoicesApi.delete(id)
+      toast({ title: "Factura borrada con éxito" })
+      fetchInvoices(page)
+    } catch {
+      toast({ title: "No se pudo borrar la factura", variant: "destructive" })
     }
   }
 
@@ -208,12 +219,19 @@ export default function InvoicesPage() {
                                     Editar
                                   </Link>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-coral focus:text-coral focus:bg-coral/5"
+                                  onClick={() => handleDelete(inv.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Borrar factura
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                               </>
                             )}
-                            {inv.status === "ACCEPTED" && (
+                            {(inv.status === "ACCEPTED" || inv.status === "DRAFT") && (
                               <>
-                                <DropdownMenuSeparator />
+                                {inv.status !== "DRAFT" && <DropdownMenuSeparator />}
                                 <DropdownMenuItem
                                   className="text-coral focus:text-coral focus:bg-coral/5"
                                   onClick={() => handleCancel(inv.id)}
