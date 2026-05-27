@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gitattributes
+.idea
+.mvn
+target
+Dockerfile
+docker-compose.yml
+mvnw
+mvnw.cmd
+HELP.md
+README.md
+*.iml
+*.log

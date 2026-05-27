@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: emitix-db
+    environment:
+      POSTGRES_DB: emitix
+      POSTGRES_USER: emitix
+      POSTGRES_PASSWORD: emitix
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emitix -d emitix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./emitix-back
+      dockerfile: Dockerfile
+    container_name: emitix-app
+    ports:
+      - "8089:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/emitix
+      - DB_USERNAME=emitix
+      - DB_PASSWORD=emitix
+      - JWT_SECRET=PPp27xSTfBwOpRn4/AV6gPzQSnQg+Oi80KdWfCcuAHs=
+      - JWT_EXPIRATION=3600000
+      - INVOICE_PREFIX=FE-
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  frontend:
+    build:
+      context: ./emitix-frontend
+      dockerfile: Dockerfile
+    container_name: emitix-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - API_INTERNAL_URL=http://app:8080
+      - NEXT_PUBLIC_API_URL=
+    depends_on:
+      - app
+    restart: always
+
+volumes:
+  postgres_data:
