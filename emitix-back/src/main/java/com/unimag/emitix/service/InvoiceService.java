@@ -81,6 +81,8 @@ public class InvoiceService {
                 .company(company)
                 .status(InvoiceStatus.DRAFT)
                 .createdBy(user)
+                .paymentMethod(request.paymentMethod() != null ? PaymentMethod.valueOf(request.paymentMethod()) : null)
+                .notes(request.notes())
                 .build();
 
         List<InvoiceItem> items = buildItems(request.items());

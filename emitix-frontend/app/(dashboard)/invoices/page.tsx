@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Search, Plus, MoreVertical, ChevronLeft, ChevronRight,
-  Clock, Pencil,
+  Clock, Pencil, XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +26,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   SENT:      { label: "Enviada",   className: "bg-gold/10 text-gold border-gold/30" },
   ACCEPTED:  { label: "Aprobada",  className: "bg-emerald/10 text-emerald border-emerald/30" },
   REJECTED:  { label: "Rechazada", className: "bg-coral/10 text-coral border-coral/30" },
-  CANCELLED: { label: "Cancelada", className: "bg-slate/10 text-slate border-slate/30" },
+  CANCELLED: { label: "Cancelada", className: "bg-coral/10 text-coral border-coral/30" },
 }
 
 const formatCOP = (n: number) =>
@@ -72,6 +72,17 @@ export default function InvoicesPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     fetchInvoices(0)
+  }
+
+  const handleCancel = async (id: string) => {
+    if (!confirm("¿Seguro que deseas cancelar esta factura? Esta acción no se puede deshacer.")) return
+    try {
+      await invoicesApi.cancel(id)
+      toast({ title: "Factura cancelada" })
+      fetchInvoices(page)
+    } catch {
+      toast({ title: "No se pudo cancelar la factura", variant: "destructive" })
+    }
   }
 
   return (
@@ -198,6 +209,18 @@ export default function InvoicesPage() {
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                              </>
+                            )}
+                            {inv.status === "ACCEPTED" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-coral focus:text-coral focus:bg-coral/5"
+                                  onClick={() => handleCancel(inv.id)}
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Cancelar factura
+                                </DropdownMenuItem>
                               </>
                             )}
                           </DropdownMenuContent>

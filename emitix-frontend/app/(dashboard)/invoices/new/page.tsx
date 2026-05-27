@@ -537,7 +537,11 @@ export default function NewInvoicePage() {
                       variant={buyerData.type === t.value ? "default" : "outline"}
                       className={buyerData.type === t.value ? "bg-ink hover:bg-ink/90" : "border-mist"}
                       onClick={() => {
-                        setBuyerData(prev => ({ ...prev, type: t.value as BuyerData["type"] }))
+                        setBuyerData(prev => ({
+                          ...prev,
+                          type: t.value as BuyerData["type"],
+                          tipoDocumento: t.value === "persona" && prev.tipoDocumento === "NIT" ? "CC" : prev.tipoDocumento,
+                        }))
                         setFoundBuyerId(null)
                         setNitVerified(false)
                       }}
@@ -632,10 +636,18 @@ export default function NewInvoicePage() {
                     >
                       <SelectTrigger className="bg-white border-mist"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="NIT">NIT</SelectItem>
+                        {buyerData.type === "empresa" && (
+                          <SelectItem value="NIT">NIT</SelectItem>
+                        )}
                         <SelectItem value="CC">Cédula de Ciudadanía</SelectItem>
                         <SelectItem value="CE">Cédula de Extranjería</SelectItem>
                         <SelectItem value="PA">Pasaporte</SelectItem>
+                        {buyerData.type === "persona" && (
+                          <>
+                            <SelectItem value="TI">Tarjeta de Identidad</SelectItem>
+                            <SelectItem value="RC">Registro Civil</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1030,6 +1042,24 @@ export default function NewInvoicePage() {
                         <span className="font-mono text-ink">{formatCOP(item.subtotal)}</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-ink/5 border border-border">
+                  <p className="text-label-caps text-slate mb-3">TOTALES</p>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate">Subtotal</span>
+                      <span className="font-mono text-ink">{formatCOP(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate">IVA</span>
+                      <span className="font-mono text-ink">{formatCOP(iva)}</span>
+                    </div>
+                    <div className="flex justify-between pt-1.5 border-t border-border font-semibold">
+                      <span className="text-ink">Total</span>
+                      <span className="font-mono text-emerald text-base">{formatCOP(total)}</span>
+                    </div>
                   </div>
                 </div>
 
