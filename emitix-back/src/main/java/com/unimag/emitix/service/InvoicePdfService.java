@@ -131,13 +131,13 @@ public class InvoicePdfService {
         }
 
         for (InvoiceItem item : invoice.getItems()) {
-            BigDecimal itemTax = item.getSubtotal().multiply(item.getTaxRate()).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal itemTax = item.getSubtotal().multiply(item.getTaxRate().divide(BigDecimal.valueOf(100), 4, java.math.RoundingMode.HALF_UP)).setScale(2, java.math.RoundingMode.HALF_UP);
             BigDecimal itemTotal = item.getSubtotal().add(itemTax).setScale(2, java.math.RoundingMode.HALF_UP);
 
             table.addCell(createCell(item.getDescription(), cellFont, Element.ALIGN_LEFT));
             table.addCell(createCell(item.getQuantity().toPlainString(), cellFont, Element.ALIGN_CENTER));
             table.addCell(createCell("$ " + formatAmount(item.getUnitPrice()), cellFont, Element.ALIGN_RIGHT));
-            table.addCell(createCell(item.getTaxRate().multiply(BigDecimal.valueOf(100)).intValue() + "%", cellFont, Element.ALIGN_CENTER));
+            table.addCell(createCell(item.getTaxRate().stripTrailingZeros().toPlainString() + "%", cellFont, Element.ALIGN_CENTER));
             table.addCell(createCell("$ " + formatAmount(itemTax), cellFont, Element.ALIGN_RIGHT));
             table.addCell(createCell("$ " + formatAmount(itemTotal), cellFont, Element.ALIGN_RIGHT));
         }

@@ -50,7 +50,7 @@ public class InvoiceXmlService {
         // Items
         xml.append("  <InvoiceLines>\n");
         for (InvoiceItem item : invoice.getItems()) {
-            java.math.BigDecimal itemTax = item.getSubtotal().multiply(item.getTaxRate()).setScale(2, java.math.RoundingMode.HALF_UP);
+            java.math.BigDecimal itemTax = item.getSubtotal().multiply(item.getTaxRate().divide(java.math.BigDecimal.valueOf(100), 4, java.math.RoundingMode.HALF_UP)).setScale(2, java.math.RoundingMode.HALF_UP);
             java.math.BigDecimal itemTotal = item.getSubtotal().add(itemTax).setScale(2, java.math.RoundingMode.HALF_UP);
 
             xml.append("    <InvoiceLine>\n");
