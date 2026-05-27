@@ -26,6 +26,7 @@ COPY . .
 # The NEXT_PUBLIC_API_URL can be empty because we use rewrites now
 ENV NEXT_PUBLIC_API_URL=""
 ENV API_INTERNAL_URL="http://app:8080"
+ENV CI=true
 
 RUN pnpm run build
 
