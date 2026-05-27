@@ -1,0 +1,2 @@
+# Este archivo permite que Git rastree la carpeta 'public' aunque esté vacía.
+# Evita errores al compilar el Dockerfile en instalaciones limpias.
