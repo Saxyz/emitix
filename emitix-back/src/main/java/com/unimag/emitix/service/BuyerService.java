@@ -7,6 +7,7 @@ import com.unimag.emitix.dto.PageResponse;
 import com.unimag.emitix.entity.Buyer;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.enums.DocumentType;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.entity.enums.FiscalRegime;
 import com.unimag.emitix.entity.enums.OrganizationType;
 import com.unimag.emitix.exception.BusinessException;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +39,12 @@ public class BuyerService {
     private final BuyerRepository buyerRepository;
     private final CompanyRepository companyRepository;
     private final BuyerMapper buyerMapper;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<BuyerResponse> findAll(UUID companyId, String search, boolean activeOnly, Pageable pageable) {
@@ -89,6 +97,9 @@ public class BuyerService {
 
         Buyer saved = buyerRepository.save(buyer);
         log.info("Buyer '{}' created in company '{}'", saved.getDocumentNumber(), companyId);
+        auditLogService.record(currentUsername(), "CREAR", EntityType.COMPRADOR,
+                saved.getId().toString(), saved.getDocumentNumber(),
+                "Cliente '" + saved.getFullName() + "' creado");
         return buyerMapper.toResponse(saved);
     }
 
@@ -110,6 +121,9 @@ public class BuyerService {
 
         Buyer saved = buyerRepository.save(buyer);
         log.info("Buyer '{}' updated", saved.getDocumentNumber());
+        auditLogService.record(currentUsername(), "ACTUALIZAR", EntityType.COMPRADOR,
+                saved.getId().toString(), saved.getDocumentNumber(),
+                "Cliente '" + saved.getFullName() + "' actualizado");
         return buyerMapper.toResponse(saved);
     }
 
@@ -120,7 +134,14 @@ public class BuyerService {
             buyerRepository.delete(buyer);
             buyerRepository.flush();
             log.info("Buyer '{}' deleted (hard delete)", buyer.getDocumentNumber());
+            auditLogService.record(currentUsername(), "ELIMINAR", EntityType.COMPRADOR,
+                    buyer.getId().toString(), buyer.getDocumentNumber(),
+                    "Cliente '" + buyer.getFullName() + "' eliminado");
         } catch (DataIntegrityViolationException e) {
+            auditLogService.recordFailure(currentUsername(), "ELIMINAR", EntityType.COMPRADOR,
+                    buyer.getId().toString(), buyer.getDocumentNumber(),
+                    "No se pudo eliminar el cliente '" + buyer.getFullName() + "'",
+                    "Tiene facturas asociadas");
             throw new BusinessException("No se puede eliminar el cliente '" + buyer.getFullName() +
                     "' porque tiene facturas asociadas. Puedes desactivarlo desde Editar.");
         }
@@ -222,6 +243,9 @@ public class BuyerService {
         }
 
         log.info("CSV import buyers for company {}: {} imported, {} skipped, {} errors", companyId, imported, skipped, errors.size());
+        auditLogService.record(currentUsername(), "IMPORTAR_CSV", EntityType.COMPRADOR,
+                companyId.toString(), imported + " compradores",
+                "Importación CSV: " + imported + " importados, " + skipped + " omitidos, " + errors.size() + " errores");
         return new CsvImportResult(imported, skipped, errors);
     }
 

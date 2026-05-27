@@ -6,6 +6,7 @@ import com.unimag.emitix.dto.UserRequest;
 import com.unimag.emitix.dto.UserResponse;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.User;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.entity.enums.Role;
 import com.unimag.emitix.exception.BusinessException;
 import com.unimag.emitix.exception.ResourceNotFoundException;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> findAll(UUID companyId, Pageable pageable) {
@@ -72,6 +80,9 @@ public class UserService {
 
         User saved = userRepository.save(user);
         log.info("User '{}' created in company '{}'", saved.getUsername(), companyId);
+        auditLogService.record(currentUsername(), "CREAR", EntityType.USUARIO,
+                saved.getId().toString(), saved.getUsername(),
+                "Usuario '" + saved.getUsername() + "' creado con rol " + saved.getRole().name());
         return toResponse(saved);
     }
 
@@ -92,6 +103,9 @@ public class UserService {
 
         User saved = userRepository.save(user);
         log.info("User '{}' updated", saved.getUsername());
+        auditLogService.record(currentUsername(), "ACTUALIZAR", EntityType.USUARIO,
+                saved.getId().toString(), saved.getUsername(),
+                "Usuario '" + saved.getUsername() + "' actualizado");
         return toResponse(saved);
     }
 
@@ -100,6 +114,9 @@ public class UserService {
         User user = getUserOrThrow(id);
         userRepository.delete(user);
         log.info("User '{}' deleted", user.getUsername());
+        auditLogService.record(currentUsername(), "ELIMINAR", EntityType.USUARIO,
+                user.getId().toString(), user.getUsername(),
+                "Usuario '" + user.getUsername() + "' eliminado");
     }
 
     private User getUserOrThrow(UUID id) {

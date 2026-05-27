@@ -13,6 +13,7 @@ import com.unimag.emitix.exception.ResourceNotFoundException;
 import com.unimag.emitix.mapper.BuyerMapper;
 import com.unimag.emitix.repository.BuyerRepository;
 import com.unimag.emitix.repository.CompanyRepository;
+import com.unimag.emitix.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,7 @@ class BuyerServiceTest {
     @Mock private BuyerRepository buyerRepository;
     @Mock private CompanyRepository companyRepository;
     @Mock private BuyerMapper buyerMapper;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks private BuyerService buyerService;
 

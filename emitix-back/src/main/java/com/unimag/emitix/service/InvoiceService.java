@@ -5,6 +5,7 @@ import com.unimag.emitix.dto.InvoiceResponse;
 import com.unimag.emitix.dto.PageResponse;
 import com.unimag.emitix.dto.UpdateInvoiceRequest;
 import com.unimag.emitix.entity.*;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.entity.enums.InvoiceStatus;
 import com.unimag.emitix.entity.enums.PaymentMethod;
 import com.unimag.emitix.exception.BusinessException;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,12 @@ public class InvoiceService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final InvoiceMapper invoiceMapper;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<InvoiceResponse> findAll(InvoiceStatus status, String buyerName,
@@ -80,6 +88,9 @@ public class InvoiceService {
 
         Invoice saved = invoiceRepository.save(invoice);
         log.info("Invoice created: {} by {}", saved.getId(), createdBy);
+        auditLogService.record(createdBy, "CREAR", EntityType.FACTURA,
+                saved.getId().toString(), saved.getPrefix() + "-" + saved.getNumber(),
+                "Factura creada en estado borrador");
         return invoiceMapper.toResponse(saved);
     }
 
@@ -107,6 +118,9 @@ public class InvoiceService {
 
         Invoice saved = invoiceRepository.save(invoice);
         log.info("Invoice {} updated", saved.getId());
+        auditLogService.record(currentUsername(), "ACTUALIZAR", EntityType.FACTURA,
+                saved.getId().toString(), saved.getPrefix() + "-" + saved.getNumber(),
+                "Factura actualizada");
         return invoiceMapper.toResponse(saved);
     }
 
@@ -121,6 +135,9 @@ public class InvoiceService {
         invoice.setStatus(InvoiceStatus.CANCELLED);
         Invoice saved = invoiceRepository.save(invoice);
         log.info("Invoice {} cancelled", saved.getId());
+        auditLogService.record(currentUsername(), "CANCELAR", EntityType.FACTURA,
+                saved.getId().toString(), saved.getPrefix() + "-" + saved.getNumber(),
+                "Factura cancelada");
         return invoiceMapper.toResponse(saved);
     }
 

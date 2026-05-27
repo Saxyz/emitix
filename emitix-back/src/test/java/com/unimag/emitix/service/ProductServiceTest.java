@@ -9,6 +9,7 @@ import com.unimag.emitix.exception.BusinessException;
 import com.unimag.emitix.exception.ResourceNotFoundException;
 import com.unimag.emitix.repository.CompanyRepository;
 import com.unimag.emitix.repository.ProductRepository;
+import com.unimag.emitix.service.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ class ProductServiceTest {
 
     @Mock private ProductRepository productRepository;
     @Mock private CompanyRepository companyRepository;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks private ProductService productService;
 

@@ -6,6 +6,7 @@ import com.unimag.emitix.dto.ProductRequest;
 import com.unimag.emitix.dto.ProductResponse;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.Product;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.exception.BusinessException;
 import com.unimag.emitix.exception.ResourceNotFoundException;
 import com.unimag.emitix.repository.CompanyRepository;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +35,12 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CompanyRepository companyRepository;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> findAll(UUID companyId, String search, boolean includeInactive, Pageable pageable) {
@@ -74,6 +82,9 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
         log.info("Product '{}' created in company '{}'", saved.getInternalCode(), companyId);
+        auditLogService.record(currentUsername(), "CREAR", EntityType.PRODUCTO,
+                saved.getId().toString(), saved.getInternalCode(),
+                "Producto '" + saved.getDescription() + "' creado");
         return toResponse(saved);
     }
 
@@ -93,6 +104,9 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
         log.info("Product '{}' updated", saved.getInternalCode());
+        auditLogService.record(currentUsername(), "ACTUALIZAR", EntityType.PRODUCTO,
+                saved.getId().toString(), saved.getInternalCode(),
+                "Producto '" + saved.getDescription() + "' actualizado");
         return toResponse(saved);
     }
 
@@ -103,7 +117,14 @@ public class ProductService {
             productRepository.delete(product);
             productRepository.flush();
             log.info("Product '{}' deleted (hard delete)", product.getInternalCode());
+            auditLogService.record(currentUsername(), "ELIMINAR", EntityType.PRODUCTO,
+                    product.getId().toString(), product.getInternalCode(),
+                    "Producto '" + product.getInternalCode() + "' eliminado");
         } catch (DataIntegrityViolationException e) {
+            auditLogService.recordFailure(currentUsername(), "ELIMINAR", EntityType.PRODUCTO,
+                    product.getId().toString(), product.getInternalCode(),
+                    "No se pudo eliminar el producto '" + product.getInternalCode() + "'",
+                    "Tiene facturas asociadas");
             throw new BusinessException("No se puede eliminar el producto '" + product.getInternalCode() +
                     "' porque está asociado a facturas existentes. Puedes desactivarlo desde Editar.");
         }
@@ -188,6 +209,9 @@ public class ProductService {
         }
 
         log.info("CSV import for company {}: {} imported, {} skipped, {} errors", companyId, imported, skipped, errors.size());
+        auditLogService.record(currentUsername(), "IMPORTAR_CSV", EntityType.PRODUCTO,
+                companyId.toString(), imported + " productos",
+                "Importación CSV: " + imported + " importados, " + skipped + " omitidos, " + errors.size() + " errores");
         return new CsvImportResult(imported, skipped, errors);
     }
 

@@ -2,6 +2,7 @@ package com.unimag.emitix.service;
 
 import com.unimag.emitix.dto.InvoiceResponse;
 import com.unimag.emitix.entity.Invoice;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.entity.enums.InvoiceStatus;
 import com.unimag.emitix.exception.BusinessException;
 import com.unimag.emitix.exception.InvalidInvoiceStateException;
@@ -11,6 +12,7 @@ import com.unimag.emitix.service.gateway.DianGateway;
 import com.unimag.emitix.service.gateway.DianResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,12 @@ public class InvoiceProcessingService {
     private final InvoiceXmlService invoiceXmlService;
     private final DianGateway dianGateway;
     private final InvoiceMapper invoiceMapper;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     /**
      * Full invoice confirmation flow:
@@ -88,6 +96,9 @@ public class InvoiceProcessingService {
 
         Invoice saved = invoiceRepository.save(invoice);
         log.info("Invoice {} confirmed successfully. DIAN tracking: {}", invoiceNumber, dianResponse.trackingId());
+        auditLogService.record(currentUsername(), "EMITIR", EntityType.FACTURA,
+                saved.getId().toString(), invoiceNumber,
+                "Factura emitida y aceptada por DIAN. Tracking: " + dianResponse.trackingId());
 
         return invoiceMapper.toResponse(saved);
     }

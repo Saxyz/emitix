@@ -4,22 +4,32 @@ import com.unimag.emitix.dto.ResolutionRequest;
 import com.unimag.emitix.dto.ResolutionResponse;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.Resolution;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.exception.ResourceNotFoundException;
 import com.unimag.emitix.repository.CompanyRepository;
 import com.unimag.emitix.repository.ResolutionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResolutionService {
 
     private final ResolutionRepository resolutionRepository;
     private final CompanyRepository companyRepository;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     public List<ResolutionResponse> findByCompany(UUID companyId) {
         return resolutionRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
@@ -45,7 +55,12 @@ public class ResolutionService {
                 .isActive(true)
                 .build();
 
-        return toResponse(resolutionRepository.save(resolution));
+        Resolution saved = resolutionRepository.save(resolution);
+        log.info("Resolution '{}' created for company '{}'", saved.getPrefix(), companyId);
+        auditLogService.record(currentUsername(), "CREAR", EntityType.RESOLUCION,
+                saved.getId().toString(), saved.getPrefix() + " " + saved.getResolutionNumber(),
+                "Resolución DIAN '" + saved.getPrefix() + "' creada");
+        return toResponse(saved);
     }
 
     @Transactional
@@ -61,7 +76,12 @@ public class ResolutionService {
         resolution.setValidFrom(request.validFrom());
         resolution.setValidUntil(request.validUntil());
 
-        return toResponse(resolutionRepository.save(resolution));
+        Resolution saved = resolutionRepository.save(resolution);
+        log.info("Resolution '{}' updated", saved.getPrefix());
+        auditLogService.record(currentUsername(), "ACTUALIZAR", EntityType.RESOLUCION,
+                saved.getId().toString(), saved.getPrefix() + " " + saved.getResolutionNumber(),
+                "Resolución DIAN '" + saved.getPrefix() + "' actualizada");
+        return toResponse(saved);
     }
 
     // ── mapper ────────────────────────────────────────────────────────────────

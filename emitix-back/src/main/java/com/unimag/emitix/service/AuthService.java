@@ -6,6 +6,7 @@ import com.unimag.emitix.dto.MeResponse;
 import com.unimag.emitix.dto.RegisterRequest;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.User;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.entity.enums.Role;
 import com.unimag.emitix.repository.CompanyRepository;
 import com.unimag.emitix.repository.UserRepository;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,28 +32,46 @@ public class AuthService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+
+    private String currentUsername() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "system";
+    }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
-
-        User user = (User) authentication.getPrincipal();
-        String token = jwtTokenProvider.generateToken(user);
-
-        log.info("User '{}' logged in successfully", user.getUsername());
-
-        java.util.UUID companyId = user.getCompany() != null ? user.getCompany().getId() : null;
-        return new LoginResponse(token, user.getUsername(), user.getFullName(), user.getRole().name(), companyId);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+            );
+            User user = (User) authentication.getPrincipal();
+            String token = jwtTokenProvider.generateToken(user);
+            log.info("User '{}' logged in successfully", user.getUsername());
+            auditLogService.record(request.username(), "LOGIN", EntityType.AUTH,
+                    user.getId().toString(), request.username(),
+                    "Inicio de sesión exitoso");
+            java.util.UUID companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+            return new LoginResponse(token, user.getUsername(), user.getFullName(), user.getRole().name(), companyId);
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            auditLogService.recordFailure(request.username(), "LOGIN", EntityType.AUTH,
+                    "N/A", request.username(),
+                    "Intento de inicio de sesión fallido",
+                    "Credenciales inválidas");
+            throw e;
+        }
     }
 
     public void logout(String token) {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
+        String username = currentUsername();
         tokenBlacklistService.blacklist(token);
         log.info("Token invalidated successfully (logout)");
+        auditLogService.record(username, "LOGOUT", EntityType.AUTH,
+                "N/A", username,
+                "Sesión cerrada exitosamente");
     }
 
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -102,6 +122,9 @@ public class AuthService {
 
         userRepository.save(user);
         log.info("User '{}' registered successfully with company '{}'", user.getUsername(), company.getDocumentNumber());
+        auditLogService.record(user.getUsername(), "REGISTRO", EntityType.AUTH,
+                user.getId() != null ? user.getId().toString() : "N/A", user.getUsername(),
+                "Registro exitoso: empresa '" + company.getLegalName() + "'");
 
         String token = jwtTokenProvider.generateToken(user);
         return new LoginResponse(token, user.getUsername(), user.getFullName(), user.getRole().name(), company.getId());

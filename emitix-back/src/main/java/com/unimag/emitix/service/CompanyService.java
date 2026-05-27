@@ -4,6 +4,7 @@ import com.unimag.emitix.dto.CompanyRequest;
 import com.unimag.emitix.dto.CompanyResponse;
 import com.unimag.emitix.entity.Company;
 import com.unimag.emitix.entity.User;
+import com.unimag.emitix.entity.enums.EntityType;
 import com.unimag.emitix.exception.ResourceNotFoundException;
 import com.unimag.emitix.mapper.CompanyMapper;
 import com.unimag.emitix.repository.CompanyRepository;
@@ -21,6 +22,7 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final CompanyMapper companyMapper;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public CompanyResponse getCompanyForUser(String username) {
@@ -44,6 +46,9 @@ public class CompanyService {
         companyMapper.updateFromRequest(request, company);
         Company saved = companyRepository.save(company);
         log.info("Company updated: {} by user {}", saved.getDocumentNumber(), username);
+        auditLogService.record(username, "ACTUALIZAR", EntityType.EMPRESA,
+                saved.getId().toString(), saved.getDocumentNumber(),
+                "Datos de empresa '" + saved.getLegalName() + "' actualizados");
         return companyMapper.toResponse(saved);
     }
 }
