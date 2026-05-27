@@ -2,6 +2,7 @@ package com.unimag.emitix.controller;
 
 import com.unimag.emitix.dto.BuyerRequest;
 import com.unimag.emitix.dto.BuyerResponse;
+import com.unimag.emitix.dto.CsvImportResult;
 import com.unimag.emitix.dto.PageResponse;
 import com.unimag.emitix.service.BuyerService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -27,8 +29,9 @@ public class BuyerController {
     public ResponseEntity<PageResponse<BuyerResponse>> getBuyers(
             @RequestParam UUID companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean activeOnly,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(buyerService.findAll(companyId, search, pageable));
+        return ResponseEntity.ok(buyerService.findAll(companyId, search, activeOnly, pageable));
     }
 
     @GetMapping("/{id}")
@@ -64,5 +67,20 @@ public class BuyerController {
             @PathVariable UUID id,
             @Valid @RequestBody BuyerRequest request) {
         return ResponseEntity.ok(buyerService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    public ResponseEntity<Void> deleteBuyer(@PathVariable UUID id) {
+        buyerService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import-csv")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    public ResponseEntity<CsvImportResult> importCsv(
+            @RequestParam UUID companyId,
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(buyerService.importFromCsv(file, companyId));
     }
 }

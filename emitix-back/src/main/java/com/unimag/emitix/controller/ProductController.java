@@ -1,5 +1,6 @@
 package com.unimag.emitix.controller;
 
+import com.unimag.emitix.dto.CsvImportResult;
 import com.unimag.emitix.dto.PageResponse;
 import com.unimag.emitix.dto.ProductRequest;
 import com.unimag.emitix.dto.ProductResponse;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -27,8 +29,9 @@ public class ProductController {
     public ResponseEntity<PageResponse<ProductResponse>> getProducts(
             @RequestParam UUID companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean includeInactive,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(productService.findAll(companyId, search, pageable));
+        return ResponseEntity.ok(productService.findAll(companyId, search, includeInactive, pageable));
     }
 
     @GetMapping("/{id}")
@@ -59,5 +62,13 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import-csv")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','ACCOUNTANT')")
+    public ResponseEntity<CsvImportResult> importCsv(
+            @RequestParam UUID companyId,
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(productService.importFromCsv(file, companyId));
     }
 }

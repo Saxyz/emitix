@@ -179,6 +179,19 @@ public class InvoicePdfService {
     }
 
     private void addFooter(Document doc, Invoice invoice) throws DocumentException {
+        if (invoice.getNotes() != null && !invoice.getNotes().isBlank()) {
+            doc.add(Chunk.NEWLINE);
+            Font notesLabelFont = new Font(Font.HELVETICA, 9, Font.BOLD, Color.DARK_GRAY);
+            Font notesValueFont = new Font(Font.HELVETICA, 9, Font.NORMAL, Color.DARK_GRAY);
+            Paragraph notesLabel = new Paragraph("Observaciones:", notesLabelFont);
+            notesLabel.setSpacingBefore(8);
+            doc.add(notesLabel);
+            Paragraph notesText = new Paragraph(invoice.getNotes(), notesValueFont);
+            notesText.setSpacingBefore(2);
+            notesText.setSpacingAfter(8);
+            doc.add(notesText);
+        }
+
         doc.add(Chunk.NEWLINE);
         doc.add(new LineSeparator(0.5f, 100f, Color.LIGHT_GRAY, Element.ALIGN_CENTER, -1));
         Font footerFont = new Font(Font.HELVETICA, 8, Font.ITALIC, Color.GRAY);
@@ -188,8 +201,6 @@ public class InvoicePdfService {
         footer.setAlignment(Element.ALIGN_CENTER);
         footer.setSpacingBefore(6);
         doc.add(footer);
-
-        // DIAN simulation is completed
     }
 
     private PdfPCell createCell(String content, Font font, int alignment) {

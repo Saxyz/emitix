@@ -34,5 +34,7 @@ public record ProductRequest(
 
         Boolean isIvaExcluded,
 
-        Boolean isService
+        Boolean isService,
+
+        Boolean isActive
 ) {}

@@ -160,6 +160,7 @@ export interface BuyerRequest {
   department?: string
   postalCode?: string
   country?: string
+  isActive?: boolean
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────
@@ -186,6 +187,7 @@ export interface ProductRequest {
   unitPrice: number
   currency?: string
   taxRate?: number
+  isIvaExcluded?: boolean
   isService?: boolean
   isActive?: boolean
 }
@@ -331,6 +333,14 @@ export interface ResolutionRequest {
   rangeTo: number
   validFrom: string
   validUntil: string
+}
+
+// ── CSV Import ────────────────────────────────────────────────────────────────
+
+export interface CsvImportResult {
+  imported: number
+  skipped: number
+  errors: string[]
 }
 
 // ── Catalogs ──────────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.unimag.emitix.service;
 
+import com.unimag.emitix.dto.CsvImportResult;
 import com.unimag.emitix.dto.PageResponse;
 import com.unimag.emitix.dto.ProductRequest;
 import com.unimag.emitix.dto.ProductResponse;
@@ -11,11 +12,18 @@ import com.unimag.emitix.repository.CompanyRepository;
 import com.unimag.emitix.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -27,12 +35,12 @@ public class ProductService {
     private final CompanyRepository companyRepository;
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductResponse> findAll(UUID companyId, String search, Pageable pageable) {
+    public PageResponse<ProductResponse> findAll(UUID companyId, String search, boolean includeInactive, Pageable pageable) {
         String searchParam = (search != null && !search.isBlank()) ? "%" + search.toLowerCase() + "%" : null;
-        return PageResponse.of(
-                productRepository.findActiveByCompanyAndSearch(companyId, searchParam, pageable)
-                        .map(this::toResponse)
-        );
+        var page = includeInactive
+                ? productRepository.findByCompanyAndSearch(companyId, searchParam, pageable)
+                : productRepository.findActiveByCompanyAndSearch(companyId, searchParam, pageable);
+        return PageResponse.of(page.map(this::toResponse));
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +89,7 @@ public class ProductService {
         product.setTaxRate(request.taxRate() != null ? request.taxRate() : BigDecimal.valueOf(19.00));
         if (request.isIvaExcluded() != null) product.setIvaExcluded(request.isIvaExcluded());
         if (request.isService() != null) product.setService(request.isService());
+        if (request.isActive() != null) product.setActive(request.isActive());
 
         Product saved = productRepository.save(product);
         log.info("Product '{}' updated", saved.getInternalCode());
@@ -90,10 +99,96 @@ public class ProductService {
     @Transactional
     public void delete(UUID id) {
         Product product = getProductOrThrow(id);
-        // Soft delete — conserva historial en invoice_items
-        product.setActive(false);
-        productRepository.save(product);
-        log.info("Product '{}' deactivated (soft delete)", product.getInternalCode());
+        try {
+            productRepository.delete(product);
+            productRepository.flush();
+            log.info("Product '{}' deleted (hard delete)", product.getInternalCode());
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException("No se puede eliminar el producto '" + product.getInternalCode() +
+                    "' porque está asociado a facturas existentes. Puedes desactivarlo desde Editar.");
+        }
+    }
+
+    @Transactional
+    public CsvImportResult importFromCsv(MultipartFile file, UUID companyId) {
+        int imported = 0, skipped = 0;
+        List<String> errors = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+            String line;
+            int row = 0;
+            while ((line = reader.readLine()) != null) {
+                row++;
+                if (row == 1) continue; // skip header
+
+                String[] cols = line.split(",", -1);
+                if (cols.length < 5) {
+                    errors.add("Fila " + row + ": columnas insuficientes (mínimo: internalCode,description,unit,unitPrice,taxRate)");
+                    skipped++;
+                    continue;
+                }
+
+                try {
+                    String internalCode = cols[0].trim();
+                    String description  = cols[1].trim();
+                    String unspscCode   = cols.length > 2 ? cols[2].trim() : null;
+                    String unit         = cols.length > 3 ? cols[3].trim() : "UND";
+                    BigDecimal unitPrice = new BigDecimal(cols[4].trim());
+                    BigDecimal taxRate   = cols.length > 5 && !cols[5].isBlank()
+                            ? new BigDecimal(cols[5].trim()) : BigDecimal.valueOf(19);
+                    boolean isService    = cols.length > 6 && "true".equalsIgnoreCase(cols[6].trim());
+
+                    if (internalCode.isBlank() || description.isBlank()) {
+                        errors.add("Fila " + row + ": código o descripción vacíos");
+                        skipped++;
+                        continue;
+                    }
+
+                    ProductRequest req = new ProductRequest(
+                            internalCode,
+                            description,
+                            (unspscCode == null || unspscCode.isBlank()) ? null : unspscCode,
+                            (unit == null || unit.isBlank()) ? "UND" : unit,
+                            unitPrice,
+                            "COP",
+                            taxRate,
+                            false,
+                            isService,
+                            null
+                    );
+
+                    if (productRepository.existsByCompanyIdAndInternalCode(companyId, internalCode)) {
+                        // update existing
+                        productRepository.findByCompanyIdAndInternalCode(companyId, internalCode)
+                                .ifPresent(p -> {
+                                    p.setDescription(req.description());
+                                    p.setUnspscCode(req.unspscCode());
+                                    p.setUnit(req.unit());
+                                    p.setUnitPrice(req.unitPrice());
+                                    p.setTaxRate(req.taxRate());
+                                    p.setService(isService);
+                                    productRepository.save(p);
+                                });
+                    } else {
+                        create(req, companyId);
+                    }
+                    imported++;
+                } catch (NumberFormatException e) {
+                    errors.add("Fila " + row + ": precio o tasa con formato inválido");
+                    skipped++;
+                } catch (BusinessException e) {
+                    errors.add("Fila " + row + ": " + e.getMessage());
+                    skipped++;
+                }
+            }
+        } catch (Exception e) {
+            throw new BusinessException("Error al leer el archivo CSV: " + e.getMessage());
+        }
+
+        log.info("CSV import for company {}: {} imported, {} skipped, {} errors", companyId, imported, skipped, errors.size());
+        return new CsvImportResult(imported, skipped, errors);
     }
 
     private Product getProductOrThrow(UUID id) {

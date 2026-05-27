@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Bell, LogOut, User, Settings, Shield, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -181,6 +181,7 @@ export function AppHeader({ title, children }: AppHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
               <Avatar className="h-9 w-9 border-2 border-emerald cursor-pointer hover:border-emerald/70 transition-colors">
+                {company?.logoUrl && <AvatarImage src={company.logoUrl} alt="Logo empresa" className="object-cover" />}
                 <AvatarFallback className="bg-ink text-white text-xs">
                   {initials}
                 </AvatarFallback>
@@ -191,6 +192,7 @@ export function AppHeader({ title, children }: AppHeaderProps) {
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-3 py-2">
                 <Avatar className="h-12 w-12 border-2 border-emerald">
+                  {company?.logoUrl && <AvatarImage src={company.logoUrl} alt="Logo empresa" className="object-cover" />}
                   <AvatarFallback className="bg-ink text-white">
                     {initials}
                   </AvatarFallback>

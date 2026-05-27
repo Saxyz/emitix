@@ -20,11 +20,21 @@ public interface BuyerRepository extends JpaRepository<Buyer, UUID> {
     // Verificar existencia por número de documento en empresa
     boolean existsByCompanyIdAndDocumentNumber(UUID companyId, String documentNumber);
 
-    // Búsqueda paginada por número de documento o nombre dentro de una empresa
+    // Búsqueda paginada por número de documento o nombre dentro de una empresa (todos)
     @Query("SELECT b FROM Buyer b WHERE b.company.id = :companyId AND " +
            "(:search IS NULL OR LOWER(b.documentNumber) LIKE CAST(:search AS string) " +
            "OR LOWER(b.fullName) LIKE CAST(:search AS string))")
     Page<Buyer> findByCompanyAndSearch(
+            @Param("companyId") UUID companyId,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
+    // Búsqueda paginada solo de compradores activos (para selección en facturas)
+    @Query("SELECT b FROM Buyer b WHERE b.company.id = :companyId AND b.isActive = true AND " +
+           "(:search IS NULL OR LOWER(b.documentNumber) LIKE CAST(:search AS string) " +
+           "OR LOWER(b.fullName) LIKE CAST(:search AS string))")
+    Page<Buyer> findActiveByCompanyAndSearch(
             @Param("companyId") UUID companyId,
             @Param("search") String search,
             Pageable pageable

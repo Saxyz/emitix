@@ -25,7 +25,7 @@ export default function PrivacidadPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-mist p-8 space-y-8 text-sm leading-relaxed text-foreground">
           <p className="text-slate">
-            Última actualización: enero de 2025
+            Última actualización: mayo de 2026
           </p>
 
           <section className="space-y-3">

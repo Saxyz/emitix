@@ -41,5 +41,7 @@ public record BuyerRequest(
         String postalCode,
 
         @Size(max = 2)
-        String country
+        String country,
+
+        Boolean isActive
 ) {}

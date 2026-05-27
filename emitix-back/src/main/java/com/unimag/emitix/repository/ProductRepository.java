@@ -25,6 +25,16 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             Pageable pageable
     );
 
+    @Query("SELECT p FROM Product p WHERE p.company.id = :companyId AND " +
+           "(:search IS NULL OR LOWER(p.description) LIKE CAST(:search AS string) " +
+           "OR LOWER(p.internalCode) LIKE CAST(:search AS string) " +
+           "OR LOWER(p.unspscCode) LIKE CAST(:search AS string))")
+    Page<Product> findByCompanyAndSearch(
+            @Param("companyId") UUID companyId,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
     Optional<Product> findByCompanyIdAndInternalCode(UUID companyId, String internalCode);
 
     boolean existsByCompanyIdAndInternalCode(UUID companyId, String internalCode);

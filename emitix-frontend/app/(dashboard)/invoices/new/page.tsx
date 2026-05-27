@@ -59,7 +59,7 @@ import { buyersApi } from "@/lib/api/buyers"
 import { productsApi } from "@/lib/api/products"
 import { invoicesApi } from "@/lib/api/invoices"
 import { companyApi } from "@/lib/api/company"
-import type { ProductResponse, PaymentMethod, InvoiceType, CompanyResponse } from "@/lib/api/types"
+import type { ProductResponse, BuyerResponse, PaymentMethod, InvoiceType, CompanyResponse } from "@/lib/api/types"
 
 // ── Local types ───────────────────────────────────────────────────────────────
 
@@ -150,6 +150,12 @@ export default function NewInvoicePage() {
   const [isVerifyingNit, setIsVerifyingNit] = useState(false)
   const [nitVerified, setNitVerified]       = useState(false)
 
+  // Buyer search dialog
+  const [buyerSearchOpen, setBuyerSearchOpen]     = useState(false)
+  const [buyerSearchQuery, setBuyerSearchQuery]   = useState("")
+  const [buyerSearchResults, setBuyerSearchResults] = useState<BuyerResponse[]>([])
+  const [buyerSearchLoading, setBuyerSearchLoading] = useState(false)
+
   // Products state
   const [items, setItems]               = useState<LineItem[]>([])
   const [searchQuery, setSearchQuery]   = useState("")
@@ -214,27 +220,55 @@ export default function NewInvoicePage() {
   }, [searchQuery, companyId])
 
   // ── Buyer verification ──────────────────────────────────────────────────────
+
+  const formatDocForSearch = (doc: string, tipo: string): string => {
+    if (tipo !== "NIT") return doc
+    const digits = doc.replace(/\D/g, "")
+    if (digits.length < 2) return doc
+    return digits.slice(0, -1) + "-" + digits.slice(-1)
+  }
+
+  const fillFromBuyer = (buyer: BuyerResponse) => {
+    setFoundBuyerId(buyer.id)
+    setNitVerified(true)
+    setBuyerData(prev => ({
+      ...prev,
+      razonSocial:     buyer.fullName,
+      tipoDocumento:   buyer.documentType,
+      numeroDocumento: buyer.documentNumber,
+      email:           buyer.email     ?? prev.email,
+      telefono:        buyer.phone     ?? prev.telefono,
+      direccion:       buyer.address   ?? prev.direccion,
+      ciudad:          buyer.city      ?? prev.ciudad,
+    }))
+  }
+
   const verifyNit = async () => {
     if (!buyerData.numeroDocumento || !companyId) return
     setIsVerifyingNit(true)
     setNitVerified(false)
     setFoundBuyerId(null)
     try {
-      const buyer = await buyersApi.verifyDocument(companyId, buyerData.numeroDocumento)
-      setFoundBuyerId(buyer.id)
-      setNitVerified(true)
-      setBuyerData(prev => ({
-        ...prev,
-        razonSocial: buyer.fullName,
-        email:       buyer.email    ?? prev.email,
-        telefono:    buyer.phone    ?? prev.telefono,
-        direccion:   buyer.address  ?? prev.direccion,
-        ciudad:      buyer.city     ?? prev.ciudad,
-      }))
+      const searchDoc = formatDocForSearch(buyerData.numeroDocumento, buyerData.tipoDocumento)
+      const buyer = await buyersApi.verifyDocument(companyId, searchDoc)
+      fillFromBuyer(buyer)
     } catch {
       setErrors({ numeroDocumento: "Comprador no encontrado en el sistema — complete el formulario para registrarlo" })
     } finally {
       setIsVerifyingNit(false)
+    }
+  }
+
+  const searchBuyers = async (q: string) => {
+    if (!companyId) return
+    setBuyerSearchLoading(true)
+    try {
+      const res = await buyersApi.getAll({ companyId, search: q, size: 10, activeOnly: true })
+      setBuyerSearchResults(res.content)
+    } catch {
+      setBuyerSearchResults([])
+    } finally {
+      setBuyerSearchLoading(false)
     }
   }
 
@@ -513,6 +547,61 @@ export default function NewInvoicePage() {
                   ))}
                 </div>
               </div>
+
+              {buyerData.type !== "consumidor_final" && (
+                <div>
+                  <Button
+                    variant="outline"
+                    className="border-mist text-slate hover:text-ink"
+                    onClick={() => { setBuyerSearchQuery(""); setBuyerSearchResults([]); setBuyerSearchOpen(true); searchBuyers("") }}
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Buscar cliente existente
+                  </Button>
+                </div>
+              )}
+
+              {/* Buyer search dialog */}
+              <Dialog open={buyerSearchOpen} onOpenChange={setBuyerSearchOpen}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Buscar cliente</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate" />
+                      <Input
+                        placeholder="Nombre, razón social o documento…"
+                        value={buyerSearchQuery}
+                        onChange={e => { setBuyerSearchQuery(e.target.value); searchBuyers(e.target.value) }}
+                        className="pl-10 border-mist"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-72 overflow-y-auto space-y-1">
+                      {buyerSearchLoading ? (
+                        <div className="py-6 text-center text-sm text-slate flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
+                        </div>
+                      ) : buyerSearchResults.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-slate">No se encontraron clientes</div>
+                      ) : (
+                        buyerSearchResults.map(b => (
+                          <div
+                            key={b.id}
+                            className="px-4 py-3 rounded-lg border border-mist hover:bg-cloud cursor-pointer"
+                            onClick={() => { fillFromBuyer(b); setBuyerSearchOpen(false) }}
+                          >
+                            <p className="font-medium text-ink text-sm">{b.fullName}</p>
+                            <p className="text-xs text-slate font-mono">{b.documentType}: {b.documentNumber}</p>
+                            {b.email && <p className="text-xs text-slate">{b.email}</p>}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {buyerData.type === "consumidor_final" ? (
                 <Alert className="bg-cloud border-mist">

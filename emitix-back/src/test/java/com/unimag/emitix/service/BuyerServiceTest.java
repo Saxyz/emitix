@@ -73,7 +73,7 @@ class BuyerServiceTest {
                 .thenReturn(new PageImpl<>(List.of(buyer)));
         when(buyerMapper.toResponse(buyer)).thenReturn(response);
 
-        PageResponse<BuyerResponse> result = buyerService.findAll(companyId, null, pageable);
+        PageResponse<BuyerResponse> result = buyerService.findAll(companyId, null, false, pageable);
 
         assertEquals(1, result.content().size());
     }
@@ -123,7 +123,7 @@ class BuyerServiceTest {
     void create_successful() {
         BuyerRequest req = new BuyerRequest("1012345679", "CC", "María López",
                 "NATURAL", "NRES", "maria@test.com", "300", "Calle 1", "Bogotá",
-                null, null, "CO");
+                null, null, "CO", null);
         BuyerResponse response = mock(BuyerResponse.class);
 
         when(buyerRepository.existsByCompanyIdAndDocumentNumber(companyId, "1012345679")).thenReturn(false);
@@ -142,7 +142,7 @@ class BuyerServiceTest {
     @Test
     void create_duplicateDocument_throwsBusinessException() {
         BuyerRequest req = new BuyerRequest("1012345678", "CC", "Otro",
-                "NATURAL", null, null, null, null, null, null, null, null);
+                "NATURAL", null, null, null, null, null, null, null, null, null);
 
         when(buyerRepository.existsByCompanyIdAndDocumentNumber(companyId, "1012345678")).thenReturn(true);
 
@@ -156,7 +156,7 @@ class BuyerServiceTest {
     void update_successful() {
         BuyerRequest req = new BuyerRequest("1012345678", "CC", "Juan Actualizado",
                 "NATURAL", "RES", "nuevo@email.com", null, null, "Medellín",
-                null, null, "CO");
+                null, null, "CO", null);
         BuyerResponse response = mock(BuyerResponse.class);
 
         when(buyerRepository.findById(buyerId)).thenReturn(Optional.of(buyer));

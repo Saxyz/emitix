@@ -72,6 +72,10 @@ public class InvoiceXmlService {
         xml.append("    <Total>").append(invoice.getTotal()).append("</Total>\n");
         xml.append("  </LegalMonetaryTotal>\n");
 
+        if (invoice.getNotes() != null && !invoice.getNotes().isBlank()) {
+            xml.append("  <Notes>").append(esc(invoice.getNotes())).append("</Notes>\n");
+        }
+
         xml.append("</Invoice>");
 
         log.debug("Generated XML for invoice {}", fullInvoiceNumber);

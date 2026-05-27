@@ -69,7 +69,7 @@ class ProductServiceTest {
         when(productRepository.findActiveByCompanyAndSearch(companyId, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(product)));
 
-        PageResponse<ProductResponse> result = productService.findAll(companyId, null, pageable);
+        PageResponse<ProductResponse> result = productService.findAll(companyId, null, false, pageable);
 
         assertEquals(1, result.content().size());
         assertEquals("SERV-001", result.content().get(0).internalCode());
@@ -100,7 +100,7 @@ class ProductServiceTest {
     void create_successful() {
         ProductRequest req = new ProductRequest("SERV-002", "Consultoría", "81112100",
                 "HRA", new BigDecimal("200000"), "COP", new BigDecimal("19.00"),
-                false, true);
+                false, true, null);
 
         when(productRepository.existsByCompanyIdAndInternalCode(companyId, "SERV-002")).thenReturn(false);
         when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
@@ -120,7 +120,7 @@ class ProductServiceTest {
     @Test
     void create_duplicateCode_throwsBusinessException() {
         ProductRequest req = new ProductRequest("SERV-001", "Desc", null,
-                "UND", BigDecimal.TEN, "COP", new BigDecimal("19.00"), false, false);
+                "UND", BigDecimal.TEN, "COP", new BigDecimal("19.00"), false, false, null);
 
         when(productRepository.existsByCompanyIdAndInternalCode(companyId, "SERV-001")).thenReturn(true);
 
@@ -134,7 +134,7 @@ class ProductServiceTest {
     void update_successful() {
         ProductRequest req = new ProductRequest("SERV-001", "Descripción nueva", null,
                 "HRA", new BigDecimal("150000"), "COP", new BigDecimal("19.00"),
-                false, true);
+                false, true, null);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         when(productRepository.save(any(Product.class))).thenReturn(product);
@@ -146,17 +146,16 @@ class ProductServiceTest {
         assertEquals(new BigDecimal("150000"), product.getUnitPrice());
     }
 
-    // ── delete (soft) ─────────────────────────────────────────────────────────
+    // ── delete (hard) ─────────────────────────────────────────────────────────
 
     @Test
-    void delete_deactivatesProduct() {
+    void delete_removesProduct() {
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productRepository.save(any(Product.class))).thenReturn(product);
 
         productService.delete(productId);
 
-        assertFalse(product.isActive());
-        verify(productRepository).save(product);
+        verify(productRepository).delete(product);
+        verify(productRepository).flush();
     }
 
     @Test
@@ -164,6 +163,6 @@ class ProductServiceTest {
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> productService.delete(productId));
-        verify(productRepository, never()).save(any());
+        verify(productRepository, never()).delete(any());
     }
 }

@@ -4,19 +4,18 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Search, Plus, MoreVertical, ChevronLeft, ChevronRight,
-  Clock, Bell, Pencil,
+  Clock, Pencil,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from "@/hooks/useAuth"
+import { AppHeader } from "@/components/layout/app-header"
 import { useToast } from "@/hooks/use-toast"
 import { invoicesApi } from "@/lib/api/invoices"
 import type { InvoiceResponse, InvoiceStatus } from "@/lib/api/types"
@@ -36,7 +35,6 @@ const formatCOP = (n: number) =>
 const PAGE_SIZE = 10
 
 export default function InvoicesPage() {
-  const { user } = useAuth()
   const { toast } = useToast()
 
   const [invoices, setInvoices]       = useState<InvoiceResponse[]>([])
@@ -78,21 +76,20 @@ export default function InvoicesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white px-6">
-        <form onSubmit={handleSearch} className="flex items-center gap-4 flex-1">
-          <div className="relative max-w-md flex-1">
+      <AppHeader>
+        <form onSubmit={handleSearch} className="flex items-center gap-3">
+          <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate" />
             <Input
               type="text"
-              placeholder="Buscar por número de factura..."
+              placeholder="Buscar factura..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-10 bg-white border-mist"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-44 border-mist bg-white">
+            <SelectTrigger className="w-40 border-mist bg-white">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -105,24 +102,13 @@ export default function InvoicesPage() {
             </SelectContent>
           </Select>
         </form>
-
-        <div className="flex items-center gap-3">
-          <Button asChild className="bg-emerald hover:bg-emerald/90 text-white">
-            <Link href="/invoices/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Factura
-            </Link>
-          </Button>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5 text-slate" />
-          </Button>
-          <Avatar className="h-9 w-9 border-2 border-emerald">
-            <AvatarFallback className="bg-ink text-white text-xs">
-              {user?.fullName?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() ?? "EM"}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      </header>
+        <Button asChild className="bg-emerald hover:bg-emerald/90 text-white">
+          <Link href="/invoices/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Factura
+          </Link>
+        </Button>
+      </AppHeader>
 
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">

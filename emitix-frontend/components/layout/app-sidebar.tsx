@@ -13,6 +13,8 @@ import {
   History,
   Plus,
   Shield,
+  Package,
+  Building2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
@@ -21,11 +23,13 @@ import type { CompanyResponse } from "@/lib/api/types"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Invoices", href: "/invoices", icon: FileText },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Activity Log", href: "/activity", icon: History },
+  { name: "Facturas", href: "/invoices", icon: FileText },
+  { name: "Clientes", href: "/clients", icon: Building2 },
+  { name: "Productos", href: "/products", icon: Package },
+  { name: "Usuarios", href: "/users", icon: Users },
+  { name: "Configuración", href: "/settings", icon: Settings },
+  { name: "Reportes", href: "/reports", icon: BarChart3 },
+  { name: "Actividad", href: "/activity", icon: History },
 ]
 
 export function AppSidebar() {
@@ -106,8 +110,12 @@ export function AppSidebar() {
       {/* User Profile */}
       <div className="border-t border-white/10 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald text-sm font-medium text-white">
-            {initials}
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald text-sm font-medium text-white overflow-hidden">
+            {company?.logoUrl ? (
+              <img src={company.logoUrl} alt="Logo" className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="truncate text-sm font-medium text-white">

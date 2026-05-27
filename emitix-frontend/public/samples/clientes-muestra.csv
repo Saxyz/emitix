@@ -1,0 +1,21 @@
+documentNumber,documentType,fullName,organizationType,fiscalRegime,email,phone,address,city,department,country
+900100001-1,NIT,Joyería Orión S.A.S,JURIDICA,RES,info@joyeriaorion.co,6013456789,Cra 15 # 93-47 Of. 201,Bogotá,Cundinamarca,CO
+900100002-2,NIT,Perfumería La Esencia Ltda,JURIDICA,RES,contacto@laesencia.com.co,6044567890,Cl 10 # 43E-31 Local 5,Medellín,Antioquia,CO
+900100003-3,NIT,Casa Luxe Colombia S.A.S,JURIDICA,RES,ventas@casaluxe.co,6013123456,Av El Dorado # 68C-61,Bogotá,Cundinamarca,CO
+900100004-4,NIT,Joyería El Diamante Rojo S.A.S,JURIDICA,RES,info@diamanterojo.co,6023234567,Cra 5 # 12-45 CC Chipichape,Cali,Valle del Cauca,CO
+900100005-5,NIT,Eleganza Fragancias S.A.S,JURIDICA,RES,eleganza@fragancias.co,6053345678,Cra 43 # 72-24 Local 8,Barranquilla,Atlántico,CO
+900100006-6,NIT,Joyas de Colombia Ltda,JURIDICA,RES,ventas@joyasdecolombia.co,6013456780,Cl 85 # 11-54 Piso 3,Bogotá,Cundinamarca,CO
+900100007-7,NIT,Perfumería Selecta S.A.S,JURIDICA,RES,selecta@perfumes.co,6044678901,Cl 33 # 73A-31 Local 12,Medellín,Antioquia,CO
+900100008-8,NIT,La Maison du Luxe Colombia S.A.S,JURIDICA,RES,info@maisonduluxe.co,6014567891,Cra 9 # 73-44 Of. 502,Bogotá,Cundinamarca,CO
+900100009-9,NIT,Brillante Joyería S.A.S,JURIDICA,RES,brillante@joyeria.co,6056789012,Cl 5 # 4-36 Centro Histórico,Cartagena,Bolívar,CO
+900100010-1,NIT,Aromas del Mundo S.A.S,JURIDICA,RES,info@aromasdelmundo.co,6013567892,Cl 100 # 15-22 Local 2,Bogotá,Cundinamarca,CO
+900100011-2,NIT,Joyería Real Gold S.A.S,JURIDICA,RES,realgold@joyeria.co,6044789012,Cra 65 # 49A-8 Local 3,Medellín,Antioquia,CO
+900100012-3,NIT,Cosmética Premium Ltda,JURIDICA,RES,premium@cosmetica.co,6013678903,Cra 7 # 32-16 Piso 2,Bogotá,Cundinamarca,CO
+900100013-4,NIT,Parfums de Elite S.A.S,JURIDICA,RES,elite@parfums.co,6023456781,Av Roosevelt # 36-17 Local 5,Cali,Valle del Cauca,CO
+900100014-5,NIT,Golden Touch Joyería S.A.S,JURIDICA,RES,info@goldentouch.co,6014789013,Cl 122 # 15-56 Local 7,Bogotá,Cundinamarca,CO
+900100015-6,NIT,Maquillaje y Lujo S.A.S,JURIDICA,RES,contacto@maquillajelujo.co,6053567890,Cra 54 # 74-12 Piso 1,Barranquilla,Atlántico,CO
+900100016-7,NIT,Joyería Platino S.A.S,JURIDICA,RES,platino@joyeria.co,6077890123,Cra 33 # 48-60 Local 9,Bucaramanga,Santander,CO
+900100017-8,NIT,Fragancias Exclusivas Ltda,JURIDICA,RES,exclusivas@fragancias.co,6013890124,Av 19 # 3-17 Local 4,Bogotá,Cundinamarca,CO
+900100018-9,NIT,Alta Joyería Andina S.A.S,JURIDICA,RES,andina@altajoyeria.co,6044901234,Cl 50 # 56-54 CC Oviedo,Medellín,Antioquia,CO
+900100019-1,NIT,Luxury Beauty Colombia S.A.S,JURIDICA,RES,beauty@luxurycolombia.co,6014012345,Cra 11 # 87-51 Of. 304,Bogotá,Cundinamarca,CO
+900100020-2,NIT,Cristales y Joyas Ltda,JURIDICA,RES,cristales@joyas.co,6023567892,Cra 1 # 5-69 Barrio Granada,Cali,Valle del Cauca,CO
