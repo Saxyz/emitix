@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -92,6 +93,7 @@ public class InvoiceController {
 
     @GetMapping("/{id}/pdf")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','ACCOUNTANT','VIEWER')")
+    @Transactional(readOnly = true)
     public ResponseEntity<byte[]> downloadInvoicePdf(@PathVariable UUID id) {
         Invoice invoice = invoiceService.getInvoiceOrThrow(id);
         byte[] pdfBytes = invoicePdfService.generatePdf(invoice);
@@ -108,6 +110,7 @@ public class InvoiceController {
      */
     @GetMapping("/{id}/xml")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','ACCOUNTANT','VIEWER')")
+    @Transactional(readOnly = true)
     public ResponseEntity<byte[]> downloadInvoiceXml(@PathVariable UUID id) {
         Invoice invoice = invoiceService.getInvoiceOrThrow(id);
         String xml = invoiceXmlService.generateXml(invoice);

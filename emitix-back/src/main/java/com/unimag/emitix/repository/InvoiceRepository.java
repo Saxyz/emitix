@@ -22,9 +22,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     Page<Invoice> findByBuyerId(UUID buyerId, Pageable pageable);
 
     @Query("SELECT i FROM Invoice i WHERE " +
-           "(:status IS NULL OR i.status = :status) AND " +
-           "(:buyerName IS NULL OR LOWER(i.buyer.fullName) LIKE CAST(:buyerName AS string)) AND " +
-           "(:invoiceNumber IS NULL OR i.number LIKE CAST(:invoiceNumber AS string) OR CONCAT(i.prefix, i.number) LIKE CAST(:invoiceNumber AS string))")
+           "(CAST(:status AS string) IS NULL OR i.status = :status) AND " +
+           "(CAST(:buyerName AS string) IS NULL OR LOWER(i.buyer.fullName) LIKE CAST(:buyerName AS string)) AND " +
+           "(CAST(:invoiceNumber AS string) IS NULL OR i.number LIKE CAST(:invoiceNumber AS string) OR CONCAT(i.prefix, i.number) LIKE CAST(:invoiceNumber AS string))")
     Page<Invoice> findByFilters(
             @Param("status") InvoiceStatus status,
             @Param("buyerName") String buyerName,

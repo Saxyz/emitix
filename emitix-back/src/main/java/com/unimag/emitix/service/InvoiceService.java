@@ -58,11 +58,13 @@ public class InvoiceService {
         Buyer buyer = buyerRepository.findById(request.buyerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", request.buyerId()));
 
-        Company company = companyRepository.findFirstByOrderByCreatedAtAsc()
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa emisora", "registro", "único"));
-
         User user = userRepository.findByUsername(createdBy)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", createdBy));
+
+        Company company = user.getCompany();
+        if (company == null) {
+            throw new BusinessException("El usuario no tiene una empresa asignada para emitir facturas");
+        }
 
         Invoice invoice = Invoice.builder()
                 .prefix("DRAFT")
